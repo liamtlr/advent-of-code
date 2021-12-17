@@ -1,14 +1,23 @@
 with open('input_data.txt', 'r') as infile:
     readings: list = infile.readlines()
 
-def get_increased_reading_count(readings: list) -> int:
-    """Return a count of the number of increased readings based on the previous."""
+
+def _get_increasing_reading_count(readings: list, step: int=1):
+    """
+    Return a count of the number of increased readings.
+
+    Accepts a step to compare non-sequential entries.
+    """
     increased_readings: int = sum(
         1
-        for next_index, reading in enumerate(readings[:-1], start=1)
-        if int(reading) < int(readings[next_index])
+        for next_index, reading in enumerate(readings[:-step])
+        if int(reading) < int(readings[next_index + step])
     )
     return increased_readings
+
+def get_increased_reading_count(readings: list) -> int:
+    """Return a count of the number of increased readings based on the previous."""
+    return _get_increasing_reading_count(readings)
 
 
 print(get_increased_reading_count(readings))
@@ -16,13 +25,7 @@ print(get_increased_reading_count(readings))
 
 def get_sliding_increased_reading_count(readings: list) -> int:
     """Return a count of the number of increased readings based on the sliding total."""
-    increased_readings: int = sum(
-        1
-        for next_index, reading in enumerate(readings[:-4])
-        # Compare the current reading (the one to leave the grouping) with the
-        # reading 3 to the left (the one to join the grouping).
-        if int(reading) < int(readings[next_index + 4])
-    )
-    return increased_readings
+    # Compare the 1st and 4th elements, 2nd and 5th, etc...
+    return _get_increasing_reading_count(readings, 4)
 
 print(get_sliding_increased_reading_count(readings))
