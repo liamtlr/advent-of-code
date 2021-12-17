@@ -1,22 +1,10 @@
 from typing import Tuple
 
 
-with open('input_data.txt', 'r') as infile:
-    movements: list = infile.readlines()
+class Navigator:
 
+    """Class for navigating a submarine based on a set of movements"""
 
-def navigate(
-        movements: list,
-        start_depth: int=0,
-        start_horizontal: int=0,
-        start_aim: int=0,
-) -> Tuple[int, int]:
-    """Apply movements to the depth and horizontal values."""
-    NET_VALUES = {
-        'depth': start_depth,
-        'horizontal': start_horizontal,
-        'aim': start_aim,
-    }
     DIRECTION_ADJUSTMENT_MAP: dict = {
         'forward': 1,
         'up': -1,
@@ -28,21 +16,45 @@ def navigate(
         'down': 'aim',
     }
 
-    for movement in movements:
-        direction, value_str = movement.split(' ')
-        value = int(value_str)
-        direction_dimension: str = DIRECTION_MAP[direction]
-        target_value: int = NET_VALUES[direction_dimension]
-        adjusted_value: int = value * DIRECTION_ADJUSTMENT_MAP[direction]
+    def __init__(
+            self,
+            infile_location: str,
+            start_depth: int=0,
+            start_horizontal: int=0,
+            start_aim: int=0,
+    ):
+        """Set the the instance variables."""
+        with open(infile_location, 'r') as infile:
+            self.movements: list = infile.readlines()
+        self.net_values: dict = {
+            'depth': start_depth,
+            'horizontal': start_horizontal,
+            'aim': start_aim,
+        }
+
+    def get_final_postion(self) -> Tuple[int, int]:
+        """Apply movements to the depth and horizontal values."""
+        for movement in self.movements:
+            direction, value_str = movement.split(' ')
+            value = int(value_str)
+            self._handle_horizontal(direction, value)
+            if direction == 'forward':
+                self._handle_depth(value)
+        return self.net_values['depth'], self.net_values['horizontal']
+
+    def _handle_horizontal(self, direction: str, value: int):
+        """Apply the horizontal / aim adjustment."""
+        direction_dimension: str = self.DIRECTION_MAP[direction]
+        target_value: int = self.net_values[direction_dimension]
+        adjusted_value: int = value * self.DIRECTION_ADJUSTMENT_MAP[direction]
         target_value += adjusted_value
-        NET_VALUES[direction_dimension] = target_value
+        self.net_values[direction_dimension] = target_value
 
-        if direction == 'forward':
-            depth_increase = NET_VALUES['aim'] * value
-            NET_VALUES['depth'] += depth_increase
+    def _handle_depth(self, value: int):
+        """Apply depth value."""
+        depth_increase = self.net_values['aim'] * value
+        self.net_values['depth'] += depth_increase
 
-    return NET_VALUES['depth'], NET_VALUES['horizontal']
 
-
-depth, horizontal = navigate(movements=movements)
+depth, horizontal = Navigator('input_data.txt').get_final_postion()
 print(depth * horizontal)
