@@ -79,6 +79,9 @@ class BingoGame:
             data: list = infile.readlines()
         self.numbers = data[0].split(',')
         self.winning_number: Optional[int] = None
+        self.winning_card: Optional[Card] = None
+        self.last_winning_number: Optional[int] = None
+        self.last_winning_card: Optional[Card] = None
         cards: list = data[2:]
         start = 0
         CARD_STEP = 6
@@ -99,15 +102,16 @@ class BingoGame:
         for number_str in self.numbers:
             number: int = int(number_str)
             self._handle_number(number)
-            if self.game_over:
-                self.winning_number = number
-                break
 
     def get_winning_card_score(self) -> int:
         """Get the winning card's score."""
-        winning_card: Card = next(card for card in self.cards if card.has_won)
-        winning_card_score: int = winning_card.get_score()
+        winning_card_score: int = self.winning_card.get_score()
         return winning_card_score * self.winning_number
+
+    def get_last_winning_card_score(self) -> int:
+        """Get the last winning card's score."""
+        last_winning_card_score: int = self.last_winning_card.get_score()
+        return last_winning_card_score * self.last_winning_number
 
     def _extract_row_numbers(self, row_string: str) -> list:
         """Extract a list of numbers from a single string of spaced numbers."""
@@ -118,11 +122,17 @@ class BingoGame:
     def _handle_number(self, number: int) -> None:
         """Pass the number to the cards"""
         for card in self.cards:
-            card.handle_number(number)
-            if card.has_won:
-                break
+            if not card.has_won:
+                card.handle_number(number)
+                if card.has_won:
+                    self.last_winning_card = card
+                    self.last_winning_number = number
+                    if not self.winning_card:
+                        self.winning_card = card
+                        self.winning_number = number
 
 
 game = BingoGame('input_data.txt')
 game.play()
 print(game.get_winning_card_score())
+print(game.get_last_winning_card_score())
