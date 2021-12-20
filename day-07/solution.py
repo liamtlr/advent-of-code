@@ -1,5 +1,5 @@
 from functools import partial, reduce
-from statistics import median
+from statistics import mean
 from typing import List
 
 
@@ -12,19 +12,20 @@ def extract_data(path: str) -> List[int]:
     return data
 
 
-def calculate_fuel_required(acc: int, curr: int, median: int) -> int:
-    """Calculate the fuel needed to reach the median."""
-    diff: int = curr - median
+def calculate_fuel_required(acc: int, curr: int, mean: int) -> int:
+    """Calculate the fuel needed to reach the mean position."""
+    diff: int = curr - mean
     if diff < 0:
         diff = diff * -1
-    acc += diff
+    adjusted_diff = sum(range(diff + 1))
+    acc += adjusted_diff
     return acc
 
 
 def calculate_minimum_fuel(positions: List[int]) -> int:
     """Calculate minimum fuel for all subs to reach the same point."""
-    median_position: int = int(median(positions))
-    reducer = partial(calculate_fuel_required, median=median_position)
+    mean_position: int = int(mean(positions))
+    reducer = partial(calculate_fuel_required, mean=mean_position)
     reduced: int = reduce(reducer, positions, 0)
     return reduced
 
