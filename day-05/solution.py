@@ -1,4 +1,17 @@
-from typing import Generator
+"""
+Solution for day 5 of advent of code.
+
+A note on the implementation. We construct a range object representing the
+traversal across the x / y axes, and their intermediary points. Separately,
+the range(s) are iterated through to construct the actual co ordinates, and
+published these to the central data structure.
+
+Whilst initially readability has been prioritised, these series iterations
+could be merged into a single iteration for performance reasons. Range object
+constructions for static points could be removed entirely.
+"""
+
+from typing import Generator, Iterable
 
 
 class SeaBed:
@@ -43,28 +56,37 @@ class SeaBed:
         start, end = co_ords
         start_x, start_y = start
         end_x, end_y = end
-        is_horizontal: bool = start_x == end_x
-        is_vertical: bool = start_y == end_y
-        if is_horizontal:
-            self._traverse_line(start_y, end_y, start_x, horizontal=True)
-        elif is_vertical:
-            self._traverse_line(start_x, end_x, start_y, horizontal=False)
+        x_traversal: range = self._build_traversal_range(start_x, end_x)
+        y_traversal: range = self._build_traversal_range(start_y, end_y)
+        self._traverse_line(x_traversal, y_traversal)
+
+    def _build_traversal_range(self, start: int, end: int) -> range:
+        """Build the points along with axis."""
+        if start > end:
+            return range(start, end - 1, -1)
+        return range(start, end+1)
 
     def _traverse_line(
             self,
-            start: int,
-            end: int,
-            constant: int,
-            horizontal: bool = True
+            x_range: tuple,
+            y_range: tuple,
     ) -> None:
         """Traverse from the start to end, updating the master co_ords dict."""
-        start, end = sorted((start, end))
-        for point in range(start, end + 1):
-            co_ord_list: list = [constant , point]
-            if horizontal:
-                co_ord_list = reversed(co_ord_list)
-            co_ord_key: tuple = tuple(co_ord_list)
-            self._update_bed(co_ord_key)
+        co_ords: tuple = tuple()
+        if len(x_range) == len(y_range):
+            y_range_iterable: Iterable = iter(y_range)
+            for x_point in x_range:
+                y_point: int = next(y_range_iterable)
+                co_ords = tuple([x_point, y_point])
+                self._update_bed(co_ords)
+        elif len(x_range) == 1:
+            for y_point in y_range:
+                co_ords = tuple([x_range[0], y_point])
+                self._update_bed(co_ords)
+        else:
+            for x_point in x_range:
+                co_ords = tuple([x_point, y_range[0]])
+                self._update_bed(co_ords)
 
     def _update_bed(self, co_ords: tuple) -> None:
         """Update the master bed data with the point."""
