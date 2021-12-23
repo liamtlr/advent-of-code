@@ -1,3 +1,4 @@
+from functools import reduce
 from typing import List, Tuple
 
 
@@ -10,7 +11,8 @@ class SeaBed:
 
     def __init__(self, infile_path: str):
         """Read the octopus data."""
-        self.flashes: int = 0
+        self.total_flashes: int = 0
+        self.step_flashes: int = 0
         self.just_flashed: set = set()
         with open(infile_path, 'r') as infile:
             raw_data: List[str] = infile.read().splitlines()
@@ -23,14 +25,29 @@ class SeaBed:
         """Get the number of flashes after the given number of steps."""
         for _ in range(steps):
             self.handle_step()
-        return self.flashes
+        return self.total_flashes
+
+    def get_simultaneous_flash_step(self) -> int:
+        """Derive the step at which all octopuses flash at one."""
+        target: int = reduce(
+            lambda acc, curr: acc + len(curr),
+            self.data,
+            0
+        )
+        step: int = 0
+        while target != self.step_flashes:
+            self.handle_step()
+            step += 1
+        return step
 
     def handle_step(self) -> None:
         """Handle a step on the octopus population."""
+        self.step_flashes = 0
         self.just_flashed = set()
         for row_index, row in enumerate(self.data):
             for column_index, _ in enumerate(row):
                 self._increment_at(row_index, column_index)
+        self.total_flashes += self.step_flashes
 
     def _increment_at(self, row_index: int, column_index: int) -> None:
         """Increment the valus at the given location"""
@@ -47,7 +64,7 @@ class SeaBed:
 
     def _handle_flash(self, row_index: int, column_index: int) -> None:
         """Handle a flash event on the surrounding octopuses."""
-        self.flashes += 1
+        self.step_flashes += 1
         self.just_flashed.add((row_index, column_index))
         lookups: List[Tuple] = [
             # Row above
@@ -71,4 +88,7 @@ class SeaBed:
                 continue
 
 
-print(SeaBed('input_data.txt').flashes_after_n_steps(100))
+bed = SeaBed('input_data.txt')
+print(bed.flashes_after_n_steps(195))
+another_bed = SeaBed('input_data.txt')
+print(another_bed.get_simultaneous_flash_step())
