@@ -38,29 +38,45 @@ class TransparentOrigami:
                 dimension, value = data.split('=')
                 self.folds.append((dimension, int(value)))
 
+    def fold(self) -> None:
+        """Perform all folds."""
+        for fold in self.folds:
+            self.perform_fold(*fold)
+
+    def print_paper(self) -> None:
+        """Construct the paper based on current dot data and print."""
+        paper: List[list] =  [
+            ['.' for _ in range(self.width + 1)]
+            for _ in range(self.height + 1)
+        ]
+        for column_index, row_index in self.dots:
+            paper[row_index][column_index] = '#'
+        for row in paper:
+            print(row)
+        return paper
+
     def perform_fold(self, dimension: str, line_value: int) -> None:
         """Simulate the effect of a fold."""
         size: int = getattr(self, self.DIMENSION_SIZE_MAP[dimension])
         from_fold_to_end: int = size - line_value
         overhang: int = max([from_fold_to_end - line_value, 0])
         new_new_dots: Set[tuple] = {
-            self._reform_row(row, (dimension, line_value), overhang)
-            for row in self.dots
-            if self._reform_row(row, (dimension, line_value), overhang) is not None
+            self._reform_dot(dot, (dimension, line_value), overhang)
+            for dot in self.dots
+            if self._reform_dot(dot, (dimension, line_value), overhang) is not None
         }
         self.dots = new_new_dots
 
         new_size: int = (size - from_fold_to_end + overhang) - 1
         setattr(self, self.DIMENSION_SIZE_MAP[dimension], new_size)
-        markers = len(self.dots)
-        return markers
+        return len(self.dots)
 
     @lru_cache
-    def _reform_row(self, row: tuple, fold: tuple, overhang: int) -> Tuple[int]:
+    def _reform_dot(self, dot: tuple, fold: tuple, overhang: int) -> Tuple[int]:
         """Determine the row's now position given the fold."""
         dimension, line_value = fold
         lookup: int = self.DIMENSION_VALUE_MAP[dimension]
-        value: int = row[lookup]
+        value: int = dot[lookup]
         new_value: int = value
         if value == line_value:
             return None
@@ -72,10 +88,14 @@ class TransparentOrigami:
             difference: int = value - line_value
             new_value = line_value - difference
         if dimension == 'x':
-            return new_value, row[1]
+            return new_value, dot[1]
         else:
-            return row[0], new_value
+            return dot[0], new_value
 
 
 origami = TransparentOrigami('input_data.txt')
 print(origami.perform_fold(*origami.folds[0]))
+
+origami_2 = TransparentOrigami('input_data.txt')
+origami_2.fold()
+origami_2.print_paper()
