@@ -1,7 +1,7 @@
 from collections import Counter
 from functools import partial, reduce
 import re
-from typing import Dict, Iterator , List
+from typing import Dict, Iterator, List, Optional
 
 
 class PolymerBuilder:
@@ -25,19 +25,10 @@ class PolymerBuilder:
     def apply_rules(self, acc, curr) -> Dict[int, list]:
         """Apply the rules and report where matches occur"""
         rule, insertion = curr
-        matches: List[Iterator] = [
-            match
-            for match in re.finditer(f'(?={rule})', self.polymer)
-        ]
-        if matches:
-            insertion_points: List[int] = [
-                match.span()[0] + 1 for match in matches
-            ]
-            for insertion_point in insertion_points:
-                if insertion_point in curr:
-                    acc[insertion_point].append(insertion)
-                else:
-                    acc[insertion_point] = [insertion]
+        matches: List[Iterator] = re.finditer(f'(?={rule})', self.polymer)
+        for match in matches:
+            insertion_point = match.span()[0] + 1
+            acc[insertion_point] = insertion
         return acc
 
     def build_polymer(
@@ -48,13 +39,12 @@ class PolymerBuilder:
     ) -> List[str]:
         """Reconstruct polymer, inserting the rule-based characers."""
         index, char = curr
-        for_insertion: List[str] = insertion_map.get(index, [])
-        chars: List[str] = []
-        if for_insertion:
-            chars = for_insertion
-        chars.append(char)
-        acc.extend(chars)
-        return acc
+        try:
+            for_insertion: List[str] = insertion_map[index]
+            chars = f'{for_insertion}{char}'
+        except KeyError:
+            chars: Optional[str] = char
+        return f'{acc}{chars}'
 
     def discern_polymer(self, steps: int) -> str:
         """Simulate the given number of steps on the polymer."""
@@ -67,13 +57,13 @@ class PolymerBuilder:
             new_string_chars: List[str] = reduce(
                 partial(self.build_polymer, insertion_map=insertion_map),
                 enumerate(self.polymer),
-                []
+                ''
             )
-            self.polymer = "".join(new_string_chars)
+            self.polymer = new_string_chars
         counts: List[int] = list(Counter(self.polymer).values())
         max_count: int = max(counts)
         min_count: int = min(counts)
         return max_count - min_count
 
 
-print(PolymerBuilder('input_data.txt').discern_polymer(10))
+print(PolymerBuilder('input_data.txt').discern_polymer(20))
